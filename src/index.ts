@@ -214,14 +214,19 @@ app.post("/v1/chat/completions", validator('json', (value, c) => {
     }
     if (resp.body) {
       const buffer = await resp.text()
-      const parts = buffer.split("\n")
+      const parts = buffer.split('\n')
       for (let part of parts) {
-        part = part.substring(6)
-        try {
-          const parseJson = JSON.parse(part)
-          responseContent += parseJson["message"]
-        } catch {
-          console.log('parse error')
+        part = part.trim()
+        if (part.startsWith('data:')) {
+          part = part.substring(5) // Remove 'data:'
+          try {
+            const parseJson = JSON.parse(part)
+            if (parseJson['message']) {
+              responseContent += parseJson['message']
+            }
+          } catch (e) {
+            console.log('parse error', e)
+          }
         }
       }
       const response: OpenAIResponse = {
